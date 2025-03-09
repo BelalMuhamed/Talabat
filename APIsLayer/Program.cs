@@ -44,6 +44,8 @@ namespace APIsLayer
                 app.UseSwaggerUI(op => op.SwaggerEndpoint("/openapi/v1.json", "v1"));
             }
 
+
+
             app.UseHttpsRedirection();
 
             app.UseAuthorization();
