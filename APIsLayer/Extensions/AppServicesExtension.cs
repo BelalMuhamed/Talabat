@@ -14,7 +14,7 @@ namespace APIsLayer.Extensions
 
             //services.AddScoped(typeof(IGenericRepo<>), typeof(GenericRepo<>));
             services.AddScoped<UnitOfWork>();
-
+            services.AddScoped<IBasketRepo, BasketRepo>();
             services.AddAutoMapper(typeof(MappingProfiles));
             services.Configure<ApiBehaviorOptions>(Options =>
             {

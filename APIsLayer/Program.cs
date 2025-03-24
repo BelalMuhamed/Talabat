@@ -11,6 +11,7 @@ using Microsoft.Extensions.Options;
 using APIsLayer.Errors;
 using APIsLayer.MiddleWares;
 using APIsLayer.Extensions;
+using StackExchange.Redis;
 
 namespace APIsLayer
 {
@@ -22,22 +23,18 @@ namespace APIsLayer
             // Add services to the container.
 
             builder.Services.AddControllers();
-            // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
+            
             builder.Services.AddOpenApi();
            
             var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
             builder.Services.AddDbContext<AppDbContext>(op => op.UseSqlServer(connectionString));
-            //builder.Services.AddScoped(typeof(IGenericRepo<>), typeof(GenericRepo<>));
-            //builder.Services.AddAutoMapper(typeof(MappingProfiles));
-            //builder.Services.Configure<ApiBehaviorOptions>(Options => {
-            //    Options.InvalidModelStateResponseFactory = (ActionContext) =>
-            //    {
-            //        var errors = ActionContext.ModelState.Where(p => p.Value.Errors.Count() > 0).SelectMany(p => p.Value.Errors).Select(e => e.ErrorMessage).ToArray();
-            //        var reponse = new APIResponseValidationError(errors);
-            //        return new BadRequestObjectResult(reponse);
-            //    };
-            //});
+            builder.Services.AddSingleton<IConnectionMultiplexer>(c =>
+            {
+                var connection = builder.Configuration.GetConnectionString("RedisConnection") ?? throw new InvalidOperationException("Connection string 'Redis' not found.");
+                return ConnectionMultiplexer.Connect(connection);
+            });
             builder.Services.AddServices();
+           
             var app = builder.Build();
             #region update database automatic when runing app
             using var scope = app.Services.CreateScope();
