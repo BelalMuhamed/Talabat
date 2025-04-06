@@ -12,6 +12,10 @@ using APIsLayer.Errors;
 using APIsLayer.MiddleWares;
 using APIsLayer.Extensions;
 using StackExchange.Redis;
+using CoreLayer.Entities.Identity;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using RepoLayer.Data.DataSeed;
 
 namespace APIsLayer
 {
@@ -28,22 +32,28 @@ namespace APIsLayer
            
             var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
             builder.Services.AddDbContext<AppDbContext>(op => op.UseSqlServer(connectionString));
+            builder.Services.AddDbContext<IdentityContext>(options => 
+            { options.UseSqlServer(builder.Configuration.GetConnectionString("identityConnection")); });
             builder.Services.AddSingleton<IConnectionMultiplexer>(c =>
             {
                 var connection = builder.Configuration.GetConnectionString("RedisConnection") ?? throw new InvalidOperationException("Connection string 'Redis' not found.");
                 return ConnectionMultiplexer.Connect(connection);
             });
             builder.Services.AddServices();
-           
-            var app = builder.Build();
+            builder.Services.AddIdentityServices(builder.Configuration);
+
+              var app = builder.Build();
+
             #region update database automatic when runing app
             using var scope = app.Services.CreateScope();
             var services = scope.ServiceProvider;
             var _dbcontext = services.GetRequiredService<AppDbContext>();
+         
             var loggerfactory = services.GetRequiredService<ILoggerFactory>();
             try
             {
                 await _dbcontext.Database.MigrateAsync();
+               
                 await StoreContextSeed.SeedAsync(_dbcontext);
             }
             catch (Exception ex)
@@ -51,7 +61,22 @@ namespace APIsLayer
                 var logger = loggerfactory.CreateLogger<Program>();
                 logger.LogError(ex, "Error when updating database");
             }
+            try
+            {
+                var _identitycontext = services.GetRequiredService<IdentityContext>();
+                var usermanager = services.GetRequiredService<UserManager<UserApplication>>();
+
+                await _identitycontext.Database.MigrateAsync();
+                await identitycontextseed.IdentitySeeding(usermanager);
+
+            }
+            catch(Exception ex)
+            {
+                var logger = loggerfactory.CreateLogger<Program>();
+                logger.LogError(ex, "Error when updating database identity");
+            }
             #endregion
+
             // Configure the HTTP request pipeline.
             app.UseMiddleware<ExceptionMiddlewarecs>();
             if (app.Environment.IsDevelopment())
@@ -64,6 +89,7 @@ namespace APIsLayer
             app.UseStaticFiles();
 
             app.UseHttpsRedirection();
+            app.UseAuthentication();
 
             app.UseAuthorization();
 

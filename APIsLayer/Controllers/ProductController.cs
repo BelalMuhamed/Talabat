@@ -4,6 +4,8 @@ using AutoMapper;
 using CoreLayer.Entities;
 using CoreLayer.RepoContract;
 using CoreLayer.Specifications;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using RepoLayer.UnitOfWork;
@@ -24,6 +26,7 @@ namespace APIsLayer.Controllers
             
             this.mapper = mapper;
         }
+        [Authorize]
         [HttpGet]
         public async Task<ActionResult<IReadOnlyList<ProductResponseForPagination<ProductToReturnDTOcs>>>> GetAll([FromQuery]SpecProductParams Params)
         {

@@ -3,6 +3,7 @@ using APIsLayer.Helpers;
 using CoreLayer.RepoContract;
 using Microsoft.AspNetCore.Mvc;
 using RepoLayer.Contract;
+using RepoLayer.Data;
 using RepoLayer.UnitOfWork;
 
 namespace APIsLayer.Extensions
@@ -16,6 +17,7 @@ namespace APIsLayer.Extensions
             services.AddScoped<UnitOfWork>();
             services.AddScoped<IBasketRepo, BasketRepo>();
             services.AddAutoMapper(typeof(MappingProfiles));
+           
             services.Configure<ApiBehaviorOptions>(Options =>
             {
                 Options.InvalidModelStateResponseFactory = (ActionContext) =>
